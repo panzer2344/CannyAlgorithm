@@ -183,10 +183,9 @@ Vec2d findPixelB(Mat continuedBorders, Mat directionMap, int radius, int i, int 
 		for (int l = -radius; l <= radius; l++) {
 			if (i + k > 0 && j + l > 0 && i + k < continuedBorders.rows && j + l < continuedBorders.cols) {
 				if (continuedBorders.at<uchar>(i + k, j + l) == 255
-					&& abs(directionMap.at<float>(i + k, j + l) - directionMap.at<float>(i, j)) <= 45
+					&& abs(directionMap.at<float>(i + k, j + l) - directionMap.at<float>(i, j)) == 0
 					) {
 					pixelB = Vec2d(i + k, j + l);
-					break;
 				}
 			}
 		}
@@ -195,7 +194,7 @@ Vec2d findPixelB(Mat continuedBorders, Mat directionMap, int radius, int i, int 
 }
 
 //drawing Line
-void drawLine(Vec2d v1, Vec2d v2, Mat image) {
+void drawLine(Vec2d v1, Vec2d v2, Mat directionMap, Mat& image) {
 	int x1 = v1[0], y1 = v1[1], x2 = v2[0], y2 = v2[1];
 
 	const int deltaX = abs(x2 - x1);
@@ -209,7 +208,9 @@ void drawLine(Vec2d v1, Vec2d v2, Mat image) {
 	image.at<uchar>(x2, y2) = 255;
 	while (x1 != x2 || y1 != y2)
 	{
-		image.at<uchar>(x1, y1) = 255;
+		//if (abs(directionMap.at<float>(x1, y1) - directionMap.at<float>(x2, y2)) == 0) {
+			image.at<uchar>(x1, y1) = 255;
+		//}
 		const int error2 = error * 2;
 		//
 		if (error2 > -deltaY)
@@ -223,23 +224,26 @@ void drawLine(Vec2d v1, Vec2d v2, Mat image) {
 			y1 += signY;
 		}
 	}
-
 }
 
+
 void continueBorders(Mat afterHysteresis, Mat directionMap, Mat& continuedBorders) {
-	int radius = afterHysteresis.rows / 40;
+	int radius = afterHysteresis.rows / 30;
 
 	//Vec2d savedPixelCoord = Vec2d(0, 0);
 	for (int i = 0; i < afterHysteresis.rows; i++) {
 		for (int j = 0; j < afterHysteresis.cols; j++) {
 			if (continuedBorders.at<uchar>(i, j) == 255) {
-				Vec2d pixelB = findPixelB(continuedBorders, directionMap, radius, i, j);
+				Vec2d pixelB = findPixelB(afterHysteresis, directionMap, radius, i, j);
 				if (pixelB != Vec2d(-1, -1) && (abs(i - pixelB[0]) > 1 || abs(j - pixelB[1]) > 1)) {
-					drawLine(Vec2d(i, j), pixelB, continuedBorders);
+					drawLine(pixelB, Vec2d(i, j), directionMap, continuedBorders);
 					continue;
 				}
 			}
 		}
 	}
-
 }
+
+
+
+
